@@ -70,6 +70,39 @@ services:
       timeout: 5s
       retries: 3
 
+  celery-worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    command: celery -A workers.celery_app worker --loglevel=info --concurrency=2
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/recsys
+      REDIS_URL: redis://redis:6379/0
+      GORSE_API_URL: http://gorse:8088
+      SECRET_KEY: ${SECRET_KEY}
+      ENVIRONMENT: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-beat:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    command: celery -A workers.celery_app beat --loglevel=info
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/recsys
+      REDIS_URL: redis://redis:6379/0
+      GORSE_API_URL: http://gorse:8088
+      SECRET_KEY: ${SECRET_KEY}
+      ENVIRONMENT: production
+    depends_on:
+      - redis
+
   frontend:
     build:
       context: ../frontend
