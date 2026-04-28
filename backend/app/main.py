@@ -11,7 +11,7 @@ from starlette.types import ASGIApp
 
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
-from app.api import auth, items, interactions, recommendations
+from app.api import auth, items, interactions, recommendations, admin
 
 configure_logging()
 logger = get_logger(__name__)
@@ -72,6 +72,7 @@ app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(items.router, prefix=API_PREFIX)
 app.include_router(interactions.router, prefix=API_PREFIX)
 app.include_router(recommendations.router, prefix=API_PREFIX)
+app.include_router(admin.router, prefix=API_PREFIX)
 
 
 @app.get("/health")
