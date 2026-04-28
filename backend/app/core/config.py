@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"
 
+    # CORS — comma-separated list of allowed origins in production
+    ALLOWED_ORIGINS: str = "http://localhost:3000"
+
+    @property
+    def origins(self) -> list[str]:
+        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
+
     # Hybrid ranking weights
     CF_WEIGHT: float = 0.6
     SEMANTIC_WEIGHT: float = 0.3
