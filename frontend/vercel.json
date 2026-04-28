@@ -5,6 +5,6 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "env": {
-    "NUXT_PUBLIC_API_BASE": "https://recsys-backend.onrender.com"
+    "NUXT_PUBLIC_API_BASE": "https://recsys-backend-gzx4.onrender.com"
   }
 }
