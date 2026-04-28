@@ -57,12 +57,30 @@ class RecommenderService:
     ) -> tuple[list[str], list[str], list[str]]:
         cf_ids = await self.gorse.get_recommendations(user_id, n=20)
 
+        # Gorse cold-start fallback: use local Redis CF model
+        if not cf_ids:
+            from recommender.inference import get_cf_fallback
+            liked = await self._get_user_liked_item_ids(user_id)
+            if liked:
+                cf_ids = await get_cf_fallback(liked, n=20)
+
         user_text = await self._build_user_preference_text(user_id)
         semantic_ids = self.embedding.similar_items(user_text, n=20) if user_text else []
 
         popular_ids = await self._get_popular_ids(limit=20)
 
         return cf_ids, semantic_ids, popular_ids
+
+    async def _get_user_liked_item_ids(self, user_id: uuid.UUID) -> list[str]:
+        from sqlalchemy import select
+        from app.models.interaction import Interaction
+        result = await self.db.execute(
+            select(Interaction.item_id)
+            .where(Interaction.user_id == user_id, Interaction.rating >= 3.5)
+            .order_by(Interaction.timestamp.desc())
+            .limit(20)
+        )
+        return [str(r[0]) for r in result.all()]
 
     def _merge_scores(
         self,

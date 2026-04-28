@@ -34,9 +34,14 @@ node_modules/
 .output/
 dist/
 .nitro/
+.cache/
 frontend/.env
 frontend/.env.*
 !frontend/.env.example
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
 
 # Data
 data/

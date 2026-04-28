@@ -11,10 +11,13 @@ passlib[bcrypt]==1.7.4
 python-multipart==0.0.19
 httpx==0.28.0
 redis[hiredis]==5.2.1
+celery[redis]==5.4.0
 sentence-transformers==3.3.1
 chromadb==0.5.23
 structlog==24.4.0
 python-dotenv==1.0.1
+slowapi==0.1.9
+limits==3.14.0
 
 # testing
 pytest==8.3.4
