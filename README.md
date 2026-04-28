@@ -130,5 +130,62 @@ npm run dev           # http://localhost:3000
 
 ## Deployment
 
-- **Backend** → Railway / Render (set `DATABASE_URL`, `REDIS_URL`, `SECRET_KEY` env vars)
-- **Frontend** → Vercel / Netlify (set `NUXT_PUBLIC_API_BASE` to backend URL)
+### Option A — Render (recommended, one-click)
+
+1. Fork this repo on GitHub
+2. Go to [render.com](https://render.com) → **New** → **Blueprint**
+3. Connect your fork — Render reads `render.yaml` and provisions:
+   - Web service (FastAPI backend)
+   - Worker (Celery tasks)
+   - Worker (Celery beat scheduler)
+   - PostgreSQL database
+   - Redis instance
+4. After deploy, run the post-deploy steps in the Render Shell:
+   ```bash
+   alembic upgrade head
+   python scripts/seed_data.py
+   python -m recommender.train
+   python -m recommender.embeddings
+   ```
+5. Set `ALLOWED_ORIGINS` to your Vercel frontend URL
+
+### Option B — Railway
+
+1. Install Railway CLI: `npm i -g @railway/cli && railway login`
+2. ```bash
+   railway init
+   railway add --database postgresql
+   railway add --database redis
+   railway up
+   ```
+3. Set env vars in Railway dashboard (see `.env.example`)
+4. For the Celery worker, create a second Railway service pointing to the same repo with start command:
+   `celery -A workers.celery_app worker --loglevel=info`
+
+### Frontend → Vercel
+
+1. Go to [vercel.com](https://vercel.com) → **New Project** → import your repo
+2. Set root directory to `frontend`
+3. Add environment variable:
+   ```
+   NUXT_PUBLIC_API_BASE=https://your-backend.onrender.com
+   ```
+4. Deploy — Vercel auto-detects Nuxt 3
+
+### Docker images (GitHub Container Registry)
+
+Every push to `main` triggers `.github/workflows/publish.yml` which pushes:
+- `ghcr.io/iamMashel/recsys-backend:latest`
+- `ghcr.io/iamMashel/recsys-frontend:latest`
+
+Use these images directly in Railway or any VPS.
+
+### Required environment variables (production)
+
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `REDIS_URL` | Redis connection string |
+| `SECRET_KEY` | 32-byte hex (`openssl rand -hex 32`) |
+| `ALLOWED_ORIGINS` | Your Vercel URL (CORS) |
+| `ENVIRONMENT` | `production` |
