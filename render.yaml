@@ -5,6 +5,7 @@ services:
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
+    plan: free
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -20,9 +21,9 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: GORSE_API_URL
-        value: http://localhost:8088   # update if Gorse runs separately
+        value: http://disabled   # Gorse not on Render — CF fallback handles this
       - key: ALLOWED_ORIGINS
-        value: https://recsys.vercel.app   # update to your Vercel URL
+        value: https://your-app.vercel.app   # CHANGE THIS after Vercel deploy
       - key: LOG_LEVEL
         value: INFO
     healthCheckPath: /health
@@ -33,7 +34,8 @@ services:
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    dockerCommand: celery -A workers.celery_app worker --loglevel=info --concurrency=2
+    plan: free
+    dockerCommand: ./worker-start.sh
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -52,30 +54,17 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: GORSE_API_URL
-        value: http://localhost:8088
+        value: http://disabled
 
-  # ── Celery Beat ──────────────────────────────────────────────────────────
-  - type: worker
-    name: recsys-celery-beat
-    runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    dockerCommand: celery -A workers.celery_app beat --loglevel=info
-    envVars:
-      - key: REDIS_URL
-        fromService:
-          name: recsys-redis
-          type: redis
-          property: connectionString
-      - key: ENVIRONMENT
-        value: production
+  # ── Redis ────────────────────────────────────────────────────────────────
+  - type: redis
+    name: recsys-redis
+    plan: free
+    ipAllowList: []   # only allow internal connections
 
 databases:
+  # ── PostgreSQL ───────────────────────────────────────────────────────────
   - name: recsys-db
     databaseName: recsys
     user: recsys_user
-    plan: free
-
-  - name: recsys-redis
-    type: redis
     plan: free
