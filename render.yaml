@@ -23,7 +23,7 @@ services:
       - key: GORSE_API_URL
         value: http://disabled
       - key: ALLOWED_ORIGINS
-        value: https://your-app.vercel.app
+        value: https://recsys-iota.vercel.app
       - key: LOG_LEVEL
         value: INFO
     healthCheckPath: /health
