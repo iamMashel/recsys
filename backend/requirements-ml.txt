@@ -1,0 +1,5 @@
+# Heavy ML dependencies — install separately on machines with enough RAM/disk
+# Run: pip install -r requirements-ml.txt
+# On Render: add these to requirements.txt only if you upgrade to a paid plan (2GB+ RAM)
+sentence-transformers==3.3.1
+chromadb==0.5.23

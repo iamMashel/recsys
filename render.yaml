@@ -21,46 +21,18 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: GORSE_API_URL
-        value: http://disabled   # Gorse not on Render — CF fallback handles this
+        value: http://disabled
       - key: ALLOWED_ORIGINS
-        value: https://your-app.vercel.app   # CHANGE THIS after Vercel deploy
+        value: https://your-app.vercel.app
       - key: LOG_LEVEL
         value: INFO
     healthCheckPath: /health
-
-  # ── Celery Worker ────────────────────────────────────────────────────────
-  - type: worker
-    name: recsys-celery-worker
-    runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    plan: free
-    dockerCommand: ./worker-start.sh
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: recsys-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: recsys-redis
-          type: redis
-          property: connectionString
-      - key: SECRET_KEY
-        fromService:
-          name: recsys-backend
-          type: web
-          envVarKey: SECRET_KEY
-      - key: ENVIRONMENT
-        value: production
-      - key: GORSE_API_URL
-        value: http://disabled
 
   # ── Redis ────────────────────────────────────────────────────────────────
   - type: redis
     name: recsys-redis
     plan: free
-    ipAllowList: []   # only allow internal connections
+    ipAllowList: []
 
 databases:
   # ── PostgreSQL ───────────────────────────────────────────────────────────
