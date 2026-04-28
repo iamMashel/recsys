@@ -1,29 +1,32 @@
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from app.main import app
 from app.db.base import Base
 from app.db.session import get_db
 
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/recsys_test"
+ASYNC_DB_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/recsys_test"
+SYNC_DB_URL = "postgresql+psycopg2://postgres:postgres@localhost:5432/recsys_test"
 
 
-@pytest_asyncio.fixture(scope="module")
-async def test_engine():
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield engine
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
+@pytest.fixture(scope="session", autouse=True)
+def create_tables():
+    """Create all tables once synchronously before any async tests run."""
+    engine = create_engine(SYNC_DB_URL)
+    Base.metadata.create_all(engine)
+    yield
+    Base.metadata.drop_all(engine)
+    engine.dispose()
 
 
 @pytest_asyncio.fixture
-async def client(test_engine):
-    TestSession = async_sessionmaker(test_engine, expire_on_commit=False)
+async def client(create_tables):
+    """Fresh async engine + HTTP client per test — no shared event loop state."""
+    engine = create_async_engine(ASYNC_DB_URL, echo=False)
+    TestSession = async_sessionmaker(engine, expire_on_commit=False)
 
     async def override_get_db():
         async with TestSession() as session:
@@ -38,3 +41,4 @@ async def client(test_engine):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
     app.dependency_overrides.clear()
+    await engine.dispose()

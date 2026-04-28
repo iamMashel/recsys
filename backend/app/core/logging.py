@@ -14,12 +14,13 @@ def configure_logging() -> None:
             structlog.stdlib.add_logger_name,
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.dev.ConsoleRenderer()
-            if settings.ENVIRONMENT == "development"
+            if settings.ENVIRONMENT != "production"
             else structlog.processors.JSONRenderer(),
         ],
         wrapper_class=structlog.make_filtering_bound_logger(log_level),
         context_class=dict,
-        logger_factory=structlog.PrintLoggerFactory(),
+        # stdlib factory — loggers have .name, compatible with slowapi and other stdlib-aware tools
+        logger_factory=structlog.stdlib.LoggerFactory(),
     )
 
     logging.basicConfig(level=log_level)
